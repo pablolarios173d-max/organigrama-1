@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Estructura de Puestos — Producción Audiovisual</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f5f6f8;
+  --font: 'Inter', sans-serif;
+}
+html, body { background: var(--bg); font-family: var(--font); min-height:100vh; overflow-x:auto; }
+
+/* TOOLBAR */
+.toolbar {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 28px; background:#fff;
+  border-bottom:1px solid #e2e2e2;
+  position:sticky; top:0; z-index:1000;
+  box-shadow:0 2px 8px rgba(0,0,0,0.06);
+  flex-wrap:wrap; gap:10px;
+}
+.t-title { font-family:'Playfair Display',serif; font-size:16px; font-weight:900; color:#111; }
+.t-title span { color:#d44a1a; }
+.t-sub { font-size:9.5px; color:#aaa; letter-spacing:0.12em; text-transform:uppercase; margin-top:1px; }
+.t-btns { display:flex; gap:8px; }
+.btn { padding:7px 16px; border-radius:4px; font-size:10.5px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; cursor:pointer; border:none; font-family:var(--font); transition:all .15s; }
+.btn-p { background:#d44a1a; color:#fff; }
+.btn-p:hover { background:#b03a12; }
+.btn-s { background:transparent; color:#d44a1a; border:1px solid #d44a1a; }
+.btn-s:hover { background:rgba(212,74,26,.06); }
+
+/* CANVAS */
+.canvas { padding:44px 50px 80px; min-width:max-content; }
+.chart-area { position:relative; }
+svg.lines { position:absolute; top:0; left:0; pointer-events:none; overflow:visible; }
+
+/* NODES */
+.node {
+  position:absolute; display:flex; align-items:center; justify-content:center;
+  text-align:center; cursor:default;
+  transition:transform .12s, box-shadow .12s;
+}
+.node:hover { transform:translateY(-2px); z-index:200; }
+
+.n-root {
+  background:#d44a1a; border:2.5px solid #a83512; border-radius:8px;
+  color:#fff; font-size:12px; font-weight:700; padding:10px 18px;
+  box-shadow:0 4px 18px rgba(212,74,26,.35);
+}
+.n-sub {
+  background:#fff; border:2px solid #d44a1a; border-radius:6px;
+  color:#d44a1a; font-size:9px; font-weight:600; padding:7px 10px;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);
+}
+.n-stage {
+  background:#1a1a1a; border-radius:4px;
+  color:#fff; font-size:8.5px; font-weight:700;
+  letter-spacing:.14em; text-transform:uppercase; padding:6px 14px;
+}
+.n-dept {
+  border-radius:20px; color:#fff;
+  font-size:8px; font-weight:700; padding:5px 12px;
+  letter-spacing:.04em;
+}
+.n-person {
+  background:#fff; border-radius:5px;
+  font-size:8px; color:#1a1a2e; font-weight:500;
+  padding:6px 9px; line-height:1.35;
+  box-shadow:0 2px 7px rgba(0,0,0,.09);
+  border-top:3px solid #ccc;
+  flex-direction:column;
+}
+.n-person .desc { font-size:7px; color:#999; font-weight:300; margin-top:2px; line-height:1.4; }
+
+/* LEGEND */
+.legend {
+  display:flex; flex-wrap:wrap; gap:7px 18px;
+  padding:14px 28px; background:#fff;
+  border-top:1px solid #e2e2e2;
+  font-size:9px; color:#666;
+}
+.leg-t { font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:#bbb; margin-right:4px; }
+.leg-i { display:flex; align-items:center; gap:5px; }
+.leg-d { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <div>
+    <div class="t-title">Estructura de Puestos en una <span>Producción Audiovisual</span></div>
+    <div class="t-sub">Pre-Producción · Producción · Post-Producción — Organigrama jerárquico completo</div>
+  </div>
+  <div class="t-btns">
+    <button class="btn btn-s" onclick="window.print()">⬡ Imprimir</button>
+    <button class="btn btn-p" onclick="xPDF()">↓ Exportar PDF</button>
+  </div>
+</div>
+
+<div class="canvas"><div class="chart-area" id="ca">
+  <svg class="lines" id="sv"></svg>
+</div></div>
+
+<div class="legend">
+  <span class="leg-t">Departamentos</span>
+  <div class="leg-i"><div class="leg-d" style="background:#f4a340"></div>Prod. Ejecutiva</div>
+  <div class="leg-i"><div class="leg-d" style="background:#e8c832"></div>Dirección</div>
+  <div class="leg-i"><div class="leg-d" style="background:#b06dd4"></div>Dirección de Arte</div>
+  <div class="leg-i"><div class="leg-d" style="background:#4a90d9"></div>Casting</div>
+  <div class="leg-i"><div class="leg-d" style="background:#6c5ce7"></div>Prod. Operativa</div>
+  <div class="leg-i"><div class="leg-d" style="background:#5cb85c"></div>Cámara / Fotografía</div>
+  <div class="leg-i"><div class="leg-d" style="background:#e87fb4"></div>Iluminación / Grip</div>
+  <div class="leg-i"><div class="leg-d" style="background:#3bb8a0"></div>Sonido</div>
+  <div class="leg-i"><div class="leg-d" style="background:#e05252"></div>Vestuario y Caract.</div>
+  <div class="leg-i"><div class="leg-d" style="background:#74869c"></div>Post General</div>
+  <div class="leg-i"><div class="leg-d" style="background:#2c6fad"></div>Edición</div>
+  <div class="leg-i"><div class="leg-d" style="background:#7c5cbf"></div>Sonido Post</div>
+  <div class="leg-i"><div class="leg-d" style="background:#f4a340"></div>Imagen Final</div>
+</div>
+
+<script>
+// ── CONFIG ──
+const CW=152, GAP_X=14, GAP_Y=12;
+const DW=132, DH=26;
+const SW=118, SH=28;
+const RW=230, RH=46;
+const SUB_W=128, SUB_H=36;
+const STAGE_SEP=80, DEPT_SEP=18;
+
+// colors
+const CC={
+  orange:'#f4a340', yellow:'#e8c832', purple:'#b06dd4',
+  blue:'#4a90d9', green:'#5cb85c', pink:'#e87fb4',
+  teal:'#3bb8a0', red:'#e05252', indigo:'#6c5ce7',
+  slate:'#74869c', navy:'#2c6fad', violet:'#7c5cbf',
+  amber:'#f59e0b', root:'#d44a1a'
+};
+
+// ── DATA ──
+function P(label,desc,col){return{kind:'person',label,desc:desc||'',col:col||'#aaa',w:CW};}
+function D(label,col,...children){return{kind:'dept',label,col,children};}
+function S(label,...depts){return{kind:'stage',label,depts};}
+
+const DATA={
+  root:'Productor / Productor Ejecutivo',
+  subs:['Coproductor','Productor Asociado','Productor de Línea'],
+  stages:[
+
+    S('PRE-PRODUCCIÓN',
+      D('Dirección',CC.yellow,
+        P('Director','Máxima autoridad creativa; define la visión artística del film.',CC.yellow),
+        P('1er Asist. de Dirección','Organiza el rodaje, horarios y coordina todos los departamentos.',CC.yellow),
+        P('2do Asist. de Dirección','Prepara hojas de llamado; supervisa maquillaje, vestuario y extras.',CC.yellow),
+        P('Continuista','Controla la coherencia y continuidad de escenas y guion.',CC.yellow),
+        P('Plan de Rodaje','Calendario que organiza escenas según disponibilidad de talento y locaciones.',CC.yellow),
+      ),
+      D('Dirección de Arte',CC.purple,
+        P('Diseñador de Producción','Define estética y estilo visual general de la película.',CC.purple),
+        P('Coordinación de Arte','Administra logística y presupuesto del departamento de arte.',CC.purple),
+        P('Asist. de Coord. de Arte','Apoya gestión administrativa del área de arte.',CC.purple),
+        D('Escenografía / Construcción',CC.purple,
+          P('Escenógrafo','Diseña y supervisa la construcción de escenografías.',CC.purple),
+          P('Asistente de Escenógrafo','Apoya en investigación y desarrollo de escenografía.',CC.purple),
+          P('Jefe de Construcción','Coordina la construcción física de los sets.',CC.purple),
+          P('Subjefe de Construcción','Apoya la supervisión del equipo de construcción.',CC.purple),
+          P('Jefe y Subjefe de Carpintería','Supervisan trabajos de carpintería del set.',CC.purple),
+          P('Carpinteros','Construyen estructuras de madera según el diseño.',CC.purple),
+          P('Jefe de Pintores','Supervisa acabados y pintura del set.',CC.purple),
+          P('Pintores','Pintan y dan acabado al set según diseño artístico.',CC.purple),
+          P('Maquetista','Realiza modelos a escala del diseño escenográfico.',CC.purple),
+        ),
+        D('Decoración / Set Dressing',CC.purple,
+          P('Decorador','Selecciona y coloca elementos decorativos del set.',CC.purple),
+          P('Asistente de Decoración','Consigue y organiza objetos de ambientación.',CC.purple),
+          P('Jefe de Montaje','Coordina armado y desmontaje del set.',CC.purple),
+          P('Asistente de Montaje','Ayuda en colocación de decoración y piezas de set.',CC.purple),
+          P('Diseñador Gráfico','Crea elementos visuales y gráficos para la película.',CC.purple),
+        ),
+        D('Props y Especiales',CC.purple,
+          P('Utilero','Gestiona utilería de mano y su continuidad durante el rodaje.',CC.purple),
+          P('Armero','Maneja y supervisa el uso seguro de armas en set.',CC.purple),
+          P('Coordinador de Animales','Controla y entrena animales para filmación.',CC.purple),
+          P('Coord. de Picture Cars','Gestiona vehículos que aparecen en pantalla.',CC.purple),
+          P('Coord. de Efectos Especiales','Diseña y ejecuta efectos físicos prácticos en set.',CC.purple),
+        ),
+      ),
+      D('Casting',CC.blue,
+        P('Director de Casting','Selecciona y audiciona actores para los distintos roles.',CC.blue),
+        P('Jefe de Reparto','Administra convocatoria y gestión del elenco.',CC.blue),
+        P('Actores','Interpretan los personajes de la historia.',CC.blue),
+        P('Stand-In','Sustituye al actor para ajustes técnicos de cámara e iluminación.',CC.blue),
+        P('Extras','Ambientan escenas de fondo sin rol protagónico.',CC.blue),
+        P('Dobles de Acción','Realizan escenas de riesgo en lugar de los actores principales.',CC.blue),
+      ),
+      D('Prod. Operativa',CC.indigo,
+        P('Gerente de Producción','Coordina la operación diaria del set y contrata al personal.',CC.indigo),
+        P('Coordinador de Producción','Gestiona contratos, reportes y documentación del proyecto.',CC.indigo),
+        P('Contador de Producción','Administra presupuesto, gastos y nómina.',CC.indigo),
+        P('Asistente de Producción','Apoya en logística del set y manejo de extras.',CC.indigo),
+        P('Gerente de Locaciones','Gestiona permisos y administración de locaciones.',CC.indigo),
+        P('Asistente de Locaciones','Busca y contacta posibles locaciones.',CC.indigo),
+        P('Coordinador de Transporte','Organiza vehículos y traslados del equipo y elenco.',CC.indigo),
+        P('Catering','Proporciona alimentos al equipo durante el rodaje.',CC.indigo),
+      ),
+    ),
+
+    S('PRODUCCIÓN',
+      D('Cámara / Fotografía',CC.green,
+        P('Director de Fotografía','Diseña y ejecuta la imagen visual junto al director.',CC.green),
+        P('Operador de Cámara','Maneja la cámara; ejecuta encuadres y movimientos.',CC.green),
+        P('1er AC (Foquista)','Mantiene el enfoque correcto en cada toma.',CC.green),
+        P('2do AC','Gestiona accesorios de cámara y reportes de cámara.',CC.green),
+        P('Data Manager (DIT)','Respalda y administra el material grabado.',CC.green),
+        P('Operador de Steadicam','Opera el estabilizador para movimientos fluidos.',CC.green),
+        P('Operador de Video Assist','Graba tomas para revisión inmediata del director.',CC.green),
+      ),
+      D('Logística / Set',CC.indigo,
+        P('Gerente de Producción (set)','Coordina la operación diaria durante el rodaje.',CC.indigo),
+        P('Asistente de Producción','Apoya la logística general del set.',CC.indigo),
+        P('Coord. de Transporte','Organiza traslados del equipo y elenco en set.',CC.indigo),
+        P('Catering','Proporciona alimentos al equipo en set.',CC.indigo),
+      ),
+      D('Iluminación / Grip',CC.pink,
+        P('Gaffer (Jefe de Iluminación)','Ejecuta el plan de iluminación del director de fotografía.',CC.pink),
+        P('Jefe Eléctrico (Best Boy)','Asiste al gaffer y coordina al equipo de eléctricos.',CC.pink),
+        P('Eléctricos','Manejan instalación y energía del sistema de iluminación.',CC.pink),
+        P('Jefe de Tramoyas (Key Grip)','Supervisa montaje técnico de cámaras y luces.',CC.pink),
+        P('Tramoyistas (Grip)','Instalan y ajustan equipo técnico: luces y soportes.',CC.pink),
+        P('Dollista','Opera y nivela el dolly para movimientos de cámara.',CC.pink),
+      ),
+      D('Sonido',CC.teal,
+        P('Ingeniero de Sonido','Graba el sonido directo en locación durante la filmación.',CC.teal),
+        P('Microfonista / Boom Operator','Maneja micrófonos y capta el audio preciso en set.',CC.teal),
+      ),
+      D('Vestuario y Caracterización',CC.red,
+        P('Diseñador de Vestuario','Diseña o selecciona el vestuario de todos los personajes.',CC.red),
+        P('Coordinador de Vestuario','Administra logística y cuidado del vestuario.',CC.red),
+        P('Jefe de Vestuario','Supervisa continuidad y asistencia en vestuario.',CC.red),
+        P('Asistente de Vestuario','Mantiene y prepara la ropa para cada jornada.',CC.red),
+        P('Jefe de Maquillaje','Diseña y supervisa el maquillaje de personajes.',CC.red),
+        P('Asistente de Maquillaje','Maquilla personajes secundarios y extras.',CC.red),
+        P('Asistente de Prostéticos','Aplica y gestiona prótesis y efectos de maquillaje.',CC.red),
+        P('Jefe de Peinado','Diseña y supervisa peinados de todos los personajes.',CC.red),
+        P('Asistente de Peinado','Realiza peinados a actores y extras.',CC.red),
+      ),
+    ),
+
+    S('POSTPRODUCCIÓN',
+      D('Post General',CC.slate,
+        P('Gerente de Post','Supervisa y coordina todas las áreas de la postproducción.',CC.slate),
+      ),
+      D('Edición',CC.navy,
+        P('Editor','Monta y estructura la narrativa final de la película.',CC.navy),
+        P('Asistente de Edición','Apoya en digitalización y sincronización del material.',CC.navy),
+      ),
+      D('Sonido de Post',CC.violet,
+        P('Diseñador de Sonido','Diseña y supervisa la construcción sonora y mezcla final.',CC.violet),
+        P('Editor de Diálogos, Ambientes e Incidentales','Limpia y crea efectos sonoros y ambientes del film.',CC.violet),
+        P('Productor Musical','Gestiona música original o licenciada para la película.',CC.violet),
+      ),
+      D('Imagen Final',CC.amber,
+        P('Colorista','Ajusta color, brillo y contraste para coherencia visual.',CC.amber),
+        P('Supervisor de VFX','Supervisa planeación y ejecución de efectos visuales digitales.',CC.amber),
+      ),
+    ),
+
+  ]
+};
+
+// ── LAYOUT ──
+const nodes=[], edges=[];
+let seq=0;
+const nid=()=>'n'+(seq++);
+
+// Measure a dept column width (handles nested depts side-by-side)
+function measureCol(item){
+  if(item.kind==='person') return CW;
+  // dept
+  const persons=item.children.filter(c=>c.kind==='person');
+  const subdepts=item.children.filter(c=>c.kind==='dept');
+  const pW = persons.length>0 ? CW : 0;
+  let sdW=0;
+  for(const sd of subdepts){ sdW+=measureCol(sd)+DEPT_SEP; }
+  if(subdepts.length>0) sdW-=DEPT_SEP;
+  return Math.max(DW, pW, sdW);
+}
+
+function measureStage(s){
+  let w=0;
+  for(const d of s.depts){ w+=measureCol(d)+DEPT_SEP; }
+  if(s.depts.length>0) w-=DEPT_SEP;
+  return Math.max(SW+20,w);
+}
+
+// Place a dept at (x,y) with parentId
+function placeItem(item, x, y, parentId){
+  if(item.kind==='person'){
+    const id=nid();
+    const h=item.desc?56:40;
+    nodes.push({id,x,y,w:CW,h,kind:'person',label:item.label,desc:item.desc,col:item.col});
+    if(parentId) edges.push({f:parentId,t:id});
+    return h;
+  }
+  // dept
+  const colW=measureCol(item);
+  const id=nid();
+  nodes.push({id,x:x+(colW-DW)/2,y,w:DW,h:DH,kind:'dept',label:item.label,col:item.col});
+  if(parentId) edges.push({f:parentId,t:id});
+
+  const persons=item.children.filter(c=>c.kind==='person');
+  const subdepts=item.children.filter(c=>c.kind==='dept');
+
+  let curY=y+DH+GAP_Y;
+  let lastId=id;
+
+  for(const pn of persons){
+    const pid=nid();
+    const h=pn.desc?56:40;
+    nodes.push({id:pid,x:x+(colW-CW)/2,y:curY,w:CW,h,kind:'person',label:pn.label,desc:pn.desc,col:pn.col});
+    edges.push({f:lastId,t:pid});
+    lastId=pid;
+    curY+=h+GAP_Y;
+  }
+
+  if(subdepts.length>0){
+    curY+=8;
+    let sdX=x;
+    for(const sd of subdepts){
+      const sdW=measureCol(sd);
+      placeItem(sd,sdX,curY,id);
+      sdX+=sdW+DEPT_SEP;
+    }
+  }
+  return colW;
+}
+
+// Measure stage widths
+const stageW=DATA.stages.map(measureStage);
+const totalW=stageW.reduce((a,b)=>a+b,0)+STAGE_SEP*(DATA.stages.length-1)+100;
+
+// Root
+const rootId=nid();
+const rootX=totalW/2-RW/2;
+const ROOT_Y=40;
+nodes.push({id:rootId,x:rootX,y:ROOT_Y,w:RW,h:RH,kind:'root',label:DATA.root});
+
+// Sub-roots
+const SUB_Y=ROOT_Y+RH+38;
+const subTotalW=SUB_W*DATA.subs.length+20*(DATA.subs.length-1);
+let subX=totalW/2-subTotalW/2;
+for(const sl of DATA.subs){
+  const sid=nid();
+  nodes.push({id:sid,x:subX,y:SUB_Y,w:SUB_W,h:SUB_H,kind:'sub',label:sl});
+  edges.push({f:rootId,t:sid});
+  subX+=SUB_W+20;
+}
+
+// Stages
+const STAGE_Y=SUB_Y+SUB_H+50;
+const DEPT_Y=STAGE_Y+SH+28;
+
+let stX=40;
+for(let si=0;si<DATA.stages.length;si++){
+  const s=DATA.stages[si];
+  const sw=stageW[si];
+
+  const stId=nid();
+  nodes.push({id:stId,x:stX+sw/2-SW/2,y:STAGE_Y,w:SW,h:SH,kind:'stage',label:s.label});
+  edges.push({f:rootId,t:stId});
+
+  let dX=stX;
+  for(const d of s.depts){
+    const dw=measureCol(d);
+    placeItem(d,dX,DEPT_Y,stId);
+    dX+=dw+DEPT_SEP;
+  }
+  stX+=sw+STAGE_SEP;
+}
+
+// ── RENDER ──
+const maxX=Math.max(...nodes.map(n=>n.x+n.w))+60;
+const maxY=Math.max(...nodes.map(n=>n.y+n.h))+60;
+
+const ca=document.getElementById('ca');
+ca.style.width=maxX+'px';
+ca.style.height=maxY+'px';
+
+for(const n of nodes){
+  const el=document.createElement('div');
+  el.id=n.id;
+  el.className='node';
+  el.style.cssText=`left:${n.x}px;top:${n.y}px;width:${n.w}px;min-height:${n.h}px;`;
+
+  if(n.kind==='root'){
+    el.classList.add('n-root');
+    el.innerHTML=`<span>${n.label}</span>`;
+  } else if(n.kind==='sub'){
+    el.classList.add('n-sub');
+    el.innerHTML=`<span>${n.label}</span>`;
+  } else if(n.kind==='stage'){
+    el.classList.add('n-stage');
+    el.innerHTML=`<span>${n.label}</span>`;
+  } else if(n.kind==='dept'){
+    el.classList.add('n-dept');
+    el.style.background=n.col;
+    el.innerHTML=`<span>${n.label}</span>`;
+  } else {
+    el.classList.add('n-person');
+    el.style.borderTopColor=n.col;
+    el.innerHTML=`<div style="font-weight:600;color:#1a1a2e;font-size:8px;">${n.label}</div>${n.desc?`<div class="desc">${n.desc}</div>`:''}`;
+  }
+  ca.appendChild(el);
+}
+
+// SVG edges
+requestAnimationFrame(()=>requestAnimationFrame(()=>{
+  const sv=document.getElementById('sv');
+  sv.setAttribute('width',maxX);
+  sv.setAttribute('height',maxY);
+  sv.setAttribute('viewBox',`0 0 ${maxX} ${maxY}`);
+
+  // Create defs for arrowheads
+  const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
+  sv.appendChild(defs);
+
+  // Collect unique parent colors
+  const parentColors={};
+  for(const e of edges){
+    const fn=nodes.find(n=>n.id===e.f);
+    if(!fn) continue;
+    let col='#ccc';
+    if(fn.kind==='root'||fn.kind==='sub') col='#d44a1a';
+    else if(fn.kind==='stage') col='#444';
+    else if(fn.kind==='dept') col=fn.col;
+    else col=fn.col||'#bbb';
+    parentColors[e.f]=col;
+  }
+
+  // Create markers
+  for(const [id,col] of Object.entries(parentColors)){
+    const m=document.createElementNS('http://www.w3.org/2000/svg','marker');
+    m.setAttribute('id','mk'+id);
+    m.setAttribute('markerWidth','6');
+    m.setAttribute('markerHeight','6');
+    m.setAttribute('refX','3');
+    m.setAttribute('refY','3');
+    m.setAttribute('orient','auto');
+    const poly=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    poly.setAttribute('points','0 0, 6 3, 0 6');
+    poly.setAttribute('fill',col);
+    poly.setAttribute('opacity','0.75');
+    m.appendChild(poly);
+    defs.appendChild(m);
+  }
+
+  // Draw edges
+  for(const e of edges){
+    const fn=nodes.find(n=>n.id===e.f);
+    const tn=nodes.find(n=>n.id===e.t);
+    if(!fn||!tn) continue;
+
+    const x1=fn.x+fn.w/2;
+    const y1=fn.y+fn.h;
+    const x2=tn.x+tn.w/2;
+    const y2=tn.y;
+    const my=(y1+y2)/2;
+
+    const col=parentColors[e.f]||'#ccc';
+    const isMain=fn.kind==='root'||fn.kind==='sub'||fn.kind==='stage';
+    const sw=isMain?2:1.5;
+    const op=isMain?0.75:0.55;
+
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d',`M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}`);
+    path.setAttribute('fill','none');
+    path.setAttribute('stroke',col);
+    path.setAttribute('stroke-width',sw);
+    path.setAttribute('stroke-opacity',op);
+    path.setAttribute('marker-end',`url(#mk${e.f})`);
+    sv.appendChild(path);
+  }
+}));
+
+function xPDF(){
+  const s=document.createElement('style');
+  s.textContent=`@media print{@page{size:A1 landscape;margin:6mm;}.toolbar{display:none!important;}}`;
+  document.head.appendChild(s);
+  window.print();
+  setTimeout(()=>document.head.removeChild(s),2000);
+}
+</script>
+</body>
+</html>
